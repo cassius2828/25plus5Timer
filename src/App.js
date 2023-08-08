@@ -14,10 +14,9 @@ import {
   faPlay,
   faPause,
   faArrowRotateRight,
-  faFaceAngry,
 } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
-
+import sound from "./Sounds/mixkit-basketball-buzzer-1647.wav";
 
 ////////////////////////////////////////////////////////////////
 
@@ -28,17 +27,23 @@ export const App = () => {
   const breakState = useSelector((state) => state.breakTimer);
   const sessionState = useSelector((state) => state.sessionTimer);
   // setting up timers
- 
 
   //////////////////////////////////////////////////////////////////////
   // session timer state + useEffect
-  const [timer, setTimer] = useState(sessionState + ':00');
+  const [timer, setTimer] = useState(sessionState + ":00");
   const [breakTimer, setBreakTimer] = useState(breakState + ":00");
   const [pause, setPause] = useState(false);
+  const [warning, setWarning] = useState(false);
 
+  // sound effect when timer ends
+  const play = () => {
+    new Audio(sound).play();
+  };
+
+  // everytime sessionState is changed via arrows, the hook will run again to update the timer
   useEffect(() => {
     setTimer(sessionState + ":00");
-  }, [sessionState])
+  }, [sessionState]);
 
   // get time function
   const getRemainingTime = (e) => {
@@ -52,6 +57,8 @@ export const App = () => {
     };
   };
 
+  // adds 0 in front of single digit numbers (strings)
+  // and adds state to change text color to red when under a minute left in timer
   const startTimer = (e) => {
     let { total, seconds, minutes } = getRemainingTime(e);
     if (total >= 0) {
@@ -61,10 +68,18 @@ export const App = () => {
           (seconds > 9 ? seconds : "0" + seconds)
       );
     }
+    if (minutes < 1 && seconds === 0) {
+      play();
+    }
+    if (minutes < 1) {
+      setWarning(true);
+    } else {
+      setWarning(false);
+    }
   };
 
   const resetTimer = (e) => {
-    setTimer(sessionState.toString() + ':00');
+    setTimer(sessionState.toString() + ":00");
 
     if (Ref.current) clearInterval(Ref.current);
     const id = setInterval(() => {
@@ -77,45 +92,39 @@ export const App = () => {
     let deadline = new Date();
     deadline.setMinutes(deadline.getMinutes() + sessionState);
     return deadline;
-  }
+  };
 
-  // useEffect(() => {
-  //   resetTimer(getDeadTime());
-  // }, []);
+  const pauseTimer = () => {
+    clearInterval(Ref.current);
+  };
+
+  const startCountDown = (e) => {
+    const id = setInterval(() => {
+      startTimer(e);
+    }, 1000);
+    Ref.current = id;
+  };
 
   const onClickReset = () => {
     resetTimer(getDeadTime());
-  }
+  };
 
   //////////////////////////////////////////////////////////////////////
-
-  // function to update time
-  const updateTime = (countdown) => {};
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      updateTime();
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="App">
       <div className="main-container">
         <Text breakState={breakState} sessionState={sessionState} />
-        <Card timer={timer} />
-        <Buttons 
-        reset={resetTimer}
-        startTimer={onClickReset} />
+        <Card warning={warning} timer={timer} />
+        <Buttons
+          reset={resetTimer}
+          startTimer={onClickReset}
+          pauseTimer={pauseTimer}
+        />
       </div>
     </div>
   );
 };
-
-
-
-
-
 
 //! TEXT COMPONENT
 const Text = ({ breakState, sessionState }) => {
@@ -162,32 +171,18 @@ const Text = ({ breakState, sessionState }) => {
   );
 };
 
-
-
-
-
-
-
 //! CARD COMPONENT
-const Card = ({ timer }) => {
+const Card = ({ timer, warning }) => {
   return (
-    <div className="card-container">
+    <div onClick={() => console.log(warning)} className="card-container">
       <h2>Session</h2>
-      <h1>{timer}</h1>
+      {warning ? <h1 style={{ color: "red" }}>{timer}</h1> : <h1>{timer}</h1>}
     </div>
   );
 };
 
-
-
-
-
-
-
-
-
 //! BUTTONS COMPONENT
-const Buttons = ({startTimer, reset}) => {
+const Buttons = ({ startTimer, reset, pauseTimer }) => {
   return (
     <div className="button-container">
       <FontAwesomeIcon
@@ -196,9 +191,14 @@ const Buttons = ({startTimer, reset}) => {
         size="2x"
         icon={faPlay}
       />
-      <FontAwesomeIcon style={{ cursor: "pointer" }} size="2x" icon={faPause} />
       <FontAwesomeIcon
-      onClick={reset}
+        onClick={pauseTimer}
+        style={{ cursor: "pointer" }}
+        size="2x"
+        icon={faPause}
+      />
+      <FontAwesomeIcon
+        onClick={reset}
         style={{ cursor: "pointer" }}
         size="2x"
         icon={faArrowRotateRight}
