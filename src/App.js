@@ -30,9 +30,12 @@ export const App = () => {
 
   //////////////////////////////////////////////////////////////////////
   // session timer state + useEffect
-  const [timer, setTimer] = useState(sessionState + ":00");
-  const [breakTimer, setBreakTimer] = useState(breakState + ":00");
-  const [togglePause, setTogglePause] = useState(false);
+  const [switchTimers, setSwitchTimers] = useState(false);
+  const [timer, setTimer] = useState(
+    switchTimers ? breakState + ":00" : sessionState + ":00"
+  );
+  // const [breakTimer, setBreakTimer] = useState(breakState + ":00");
+
   const [warning, setWarning] = useState(false);
 
   // sound effect when timer ends
@@ -44,6 +47,14 @@ export const App = () => {
   useEffect(() => {
     setTimer(sessionState + ":00");
   }, [sessionState]);
+
+  // to start the break timer asap
+  useEffect(() => {
+    if (switchTimers) {
+      clearInterval(Ref.current);
+      beginTimer(getDeadTime());
+    }
+  }, [switchTimers]);
 
   // ? TIMER LOGIC STARTS
   // get time function
@@ -72,6 +83,8 @@ export const App = () => {
     }
     if (minutes < 1 && seconds === 0) {
       play();
+      setSwitchTimers(!switchTimers);
+      setTimer(breakState + ":00");
     }
     if (minutes < 1) {
       setWarning(true);
@@ -83,32 +96,32 @@ export const App = () => {
   const resetTimer = () => {
     if (Ref.current) clearInterval(Ref.current);
     setTimer(sessionState.toString() + ":00");
+    setSwitchTimers(false);
   };
 
   // ! we are starting the timer off the deadtime which takes the current time plus the
   // ! amount of minutes from session state to create out timer
   // * in order to contiue where we left off we need to add the CURRENT time left of the timer
   const beginTimer = (e) => {
-    // debugger;
-    // if (Ref.current) clearInterval(Ref.current);
-    // setTimer(sessionState.toString() + ":00");
     const id = setInterval(() => {
       startTimer(e);
     }, 1000);
     Ref.current = id;
   };
 
+  // * fixed resume issue by setting the dealine to the current timer values
+  // 1) split timer into 2 section
+  //  2) parse those sections
+  // 3) added those values to the deadline time
   const getDeadTime = () => {
     let deadline = new Date();
     // var to parse and split data to continue timer
     let parseTime = timer.split(":");
-    console.log(parseTime);
+
     let parsedMinutes = parseInt(parseTime[0]);
     let parsedSeconds = parseInt(parseTime[1]);
     deadline.setMinutes(deadline.getMinutes() + parsedMinutes);
     deadline.setSeconds(deadline.getSeconds() + parsedSeconds);
-
-    console.log(deadline);
     return deadline;
   };
 
@@ -116,39 +129,22 @@ export const App = () => {
     clearInterval(Ref.current);
   };
 
-  const startCountDown = (e) => {
-    const id = setInterval(() => {
-      startTimer(e);
-    }, 1000);
-    Ref.current = id;
-  };
-
   const onBeginTimer = () => {
     clearInterval(Ref.current);
     beginTimer(getDeadTime());
   };
 
-  const onClickReset2 = () => {
-    setTimer(timer);
-    const id = setInterval(() => {
-      startTimer();
-    }, 1000);
-    Ref.current = id;
-  };
-
   //////////////////////////////////////////////////////////////////////
 
   return (
-    <div className="App">
-      <div className="main-container">
-        <Text breakState={breakState} sessionState={sessionState} />
-        <Card warning={warning} timer={timer} />
-        <Buttons
-          reset={resetTimer}
-          startTimer={onBeginTimer}
-          pauseTimer={pauseTimer}
-        />
-      </div>
+    <div className="main-container">
+      <Text breakState={breakState} sessionState={sessionState} />
+      <Card warning={warning} timer={timer} switchTimers={switchTimers} />
+      <Buttons
+        reset={resetTimer}
+        startTimer={onBeginTimer}
+        pauseTimer={pauseTimer}
+      />
     </div>
   );
 };
@@ -162,15 +158,17 @@ const Text = ({ breakState, sessionState }) => {
       <h1 className="tc">25 + 5 Clock</h1>
       <div className="length-container">
         <div className="length-text1">
-          <h2>Break Length</h2>
+          <h2 id="break-label">Break Length</h2>
           <div className="text-buttons">
             <FontAwesomeIcon
+              id="break-decrement"
               onClick={() => dispatch(decrementBreak())}
               size="lg"
               icon={faArrowDown}
             />
-            <h2>{breakState}</h2>
+            <h2 id="break-length">{breakState}</h2>
             <FontAwesomeIcon
+              id="break-increment"
               onClick={() => dispatch(incrementBreak())}
               size="lg"
               icon={faArrowUp}
@@ -178,15 +176,17 @@ const Text = ({ breakState, sessionState }) => {
           </div>
         </div>
         <div className="length-text2">
-          <h2> Session Length</h2>
+          <h2 id="session-label"> Session Length</h2>
           <div className="text-buttons">
             <FontAwesomeIcon
+              id="session-decrement"
               onClick={() => dispatch(decrementSession())}
               size="lg"
               icon={faArrowDown}
             />
-            <h2>{sessionState}</h2>
+            <h2 id="session-length">{sessionState}</h2>
             <FontAwesomeIcon
+              id="session-increment"
               onClick={() => dispatch(incrementSession())}
               size="lg"
               icon={faArrowUp}
@@ -199,11 +199,35 @@ const Text = ({ breakState, sessionState }) => {
 };
 
 //! CARD COMPONENT
-const Card = ({ timer, warning }) => {
+const Card = ({ timer, warning, switchTimers }) => {
   return (
     <div className="card-container">
-      <h2>Session</h2>
-      {warning ? <h1 style={{ color: "red" }}>{timer}</h1> : <h1>{timer}</h1>}
+      {switchTimers ? (
+        <>
+          <h2>Break</h2>
+          {warning ? (
+            <h1 id="time-left" style={{ color: "red" }}>
+              {timer}
+            </h1>
+          ) : (
+            <h1 id="time-left">{timer}</h1>
+          )}
+        </>
+      ) : (
+        <>
+          {" "}
+          <h2
+          id="timer-label"
+          >Session</h2>
+          {warning ? (
+            <h1 id="time-left" style={{ color: "red" }}>
+              {timer}
+            </h1>
+          ) : (
+            <h1 id="time-left">{timer}</h1>
+          )}
+        </>
+      )}
     </div>
   );
 };
@@ -215,19 +239,22 @@ const Buttons = ({ startTimer, reset, pauseTimer }) => {
       <FontAwesomeIcon
         onClick={startTimer}
         style={{ cursor: "pointer" }}
-        size="2x"
+        size="lg"
+        className="icon"
         icon={faPlay}
       />
       <FontAwesomeIcon
         onClick={pauseTimer}
         style={{ cursor: "pointer" }}
-        size="2x"
+        size="lg"
+        className="icon"
         icon={faPause}
       />
       <FontAwesomeIcon
         onClick={reset}
         style={{ cursor: "pointer" }}
-        size="2x"
+        size="lg"
+        className="icon"
         icon={faArrowRotateRight}
       />
     </div>
