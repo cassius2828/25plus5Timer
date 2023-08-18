@@ -22,7 +22,9 @@ import sound from "./Sounds/mixkit-basketball-buzzer-1647.wav";
 
 //! APP COMPONENT
 export const App = () => {
+  // ref for countdown
   const Ref = useRef(null);
+
   // store state
   const breakState = useSelector((state) => state.breakTimer);
   const sessionState = useSelector((state) => state.sessionTimer);
@@ -60,7 +62,6 @@ export const App = () => {
   // get time function
   const getRemainingTime = (e) => {
     const total = Date.parse(e) - Date.parse(new Date());
-    console.log(total);
     const seconds = Math.floor((total / 1000) % 60);
     const minutes = Math.floor((total / 1000 / 60) % 60);
     return {
@@ -158,17 +159,15 @@ const Text = ({ breakState, sessionState }) => {
       <h1 className="tc">25 + 5 Clock</h1>
       <div className="length-container">
         <div className="length-text1">
-          <h2 id="break-label">Break Length</h2>
+          <h2>Break Length</h2>
           <div className="text-buttons">
             <FontAwesomeIcon
-              id="break-decrement"
               onClick={() => dispatch(decrementBreak())}
               size="lg"
               icon={faArrowDown}
             />
-            <h2 id="break-length">{breakState}</h2>
+            <h2>{breakState}</h2>
             <FontAwesomeIcon
-              id="break-increment"
               onClick={() => dispatch(incrementBreak())}
               size="lg"
               icon={faArrowUp}
@@ -176,17 +175,15 @@ const Text = ({ breakState, sessionState }) => {
           </div>
         </div>
         <div className="length-text2">
-          <h2 id="session-label"> Session Length</h2>
+          <h2> Session Length</h2>
           <div className="text-buttons">
             <FontAwesomeIcon
-              id="session-decrement"
               onClick={() => dispatch(decrementSession())}
               size="lg"
               icon={faArrowDown}
             />
-            <h2 id="session-length">{sessionState}</h2>
+            <h2>{sessionState}</h2>
             <FontAwesomeIcon
-              id="session-increment"
               onClick={() => dispatch(incrementSession())}
               size="lg"
               icon={faArrowUp}
@@ -206,25 +203,19 @@ const Card = ({ timer, warning, switchTimers }) => {
         <>
           <h2>Break</h2>
           {warning ? (
-            <h1 id="time-left" style={{ color: "red" }}>
-              {timer}
-            </h1>
+            <h1 style={{ color: "red" }}>{timer}</h1>
           ) : (
-            <h1 id="time-left">{timer}</h1>
+            <h1>{timer}</h1>
           )}
         </>
       ) : (
         <>
           {" "}
-          <h2
-          id="timer-label"
-          >Session</h2>
+          <h2>Session</h2>
           {warning ? (
-            <h1 id="time-left" style={{ color: "red" }}>
-              {timer}
-            </h1>
+            <h1 style={{ color: "red" }}>{timer}</h1>
           ) : (
-            <h1 id="time-left">{timer}</h1>
+            <h1>{timer}</h1>
           )}
         </>
       )}
