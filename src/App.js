@@ -32,7 +32,7 @@ export const App = () => {
   // session timer state + useEffect
   const [timer, setTimer] = useState(sessionState + ":00");
   const [breakTimer, setBreakTimer] = useState(breakState + ":00");
-  const [pause, setPause] = useState(false);
+  const [togglePause, setTogglePause] = useState(false);
   const [warning, setWarning] = useState(false);
 
   // sound effect when timer ends
@@ -45,9 +45,11 @@ export const App = () => {
     setTimer(sessionState + ":00");
   }, [sessionState]);
 
+  // ? TIMER LOGIC STARTS
   // get time function
   const getRemainingTime = (e) => {
     const total = Date.parse(e) - Date.parse(new Date());
+    console.log(total);
     const seconds = Math.floor((total / 1000) % 60);
     const minutes = Math.floor((total / 1000 / 60) % 60);
     return {
@@ -78,10 +80,18 @@ export const App = () => {
     }
   };
 
-  const resetTimer = (e) => {
-    setTimer(sessionState.toString() + ":00");
-
+  const resetTimer = () => {
     if (Ref.current) clearInterval(Ref.current);
+    setTimer(sessionState.toString() + ":00");
+  };
+
+  // ! we are starting the timer off the deadtime which takes the current time plus the
+  // ! amount of minutes from session state to create out timer
+  // * in order to contiue where we left off we need to add the CURRENT time left of the timer
+  const beginTimer = (e) => {
+    // debugger;
+    // if (Ref.current) clearInterval(Ref.current);
+    // setTimer(sessionState.toString() + ":00");
     const id = setInterval(() => {
       startTimer(e);
     }, 1000);
@@ -90,7 +100,15 @@ export const App = () => {
 
   const getDeadTime = () => {
     let deadline = new Date();
-    deadline.setMinutes(deadline.getMinutes() + sessionState);
+    // var to parse and split data to continue timer
+    let parseTime = timer.split(":");
+    console.log(parseTime);
+    let parsedMinutes = parseInt(parseTime[0]);
+    let parsedSeconds = parseInt(parseTime[1]);
+    deadline.setMinutes(deadline.getMinutes() + parsedMinutes);
+    deadline.setSeconds(deadline.getSeconds() + parsedSeconds);
+
+    console.log(deadline);
     return deadline;
   };
 
@@ -105,8 +123,17 @@ export const App = () => {
     Ref.current = id;
   };
 
-  const onClickReset = () => {
-    resetTimer(getDeadTime());
+  const onBeginTimer = () => {
+    clearInterval(Ref.current);
+    beginTimer(getDeadTime());
+  };
+
+  const onClickReset2 = () => {
+    setTimer(timer);
+    const id = setInterval(() => {
+      startTimer();
+    }, 1000);
+    Ref.current = id;
   };
 
   //////////////////////////////////////////////////////////////////////
@@ -118,7 +145,7 @@ export const App = () => {
         <Card warning={warning} timer={timer} />
         <Buttons
           reset={resetTimer}
-          startTimer={onClickReset}
+          startTimer={onBeginTimer}
           pauseTimer={pauseTimer}
         />
       </div>
@@ -174,7 +201,7 @@ const Text = ({ breakState, sessionState }) => {
 //! CARD COMPONENT
 const Card = ({ timer, warning }) => {
   return (
-    <div onClick={() => console.log(warning)} className="card-container">
+    <div className="card-container">
       <h2>Session</h2>
       {warning ? <h1 style={{ color: "red" }}>{timer}</h1> : <h1>{timer}</h1>}
     </div>
