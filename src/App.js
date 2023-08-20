@@ -36,6 +36,7 @@ export const App = () => {
   const [timer, setTimer] = useState(
     switchTimers ? breakState + ":00" : sessionState + ":00"
   );
+  const [tally, setTally] = useState(0);
   // const [breakTimer, setBreakTimer] = useState(breakState + ":00");
 
   const [warning, setWarning] = useState(false);
@@ -51,10 +52,14 @@ export const App = () => {
   }, [sessionState]);
 
   // to start the break timer asap
+  // * removed boolean to have session timer start immediately after break ends
+  // ?this causes the timer to start immediately on load which I do not want
+  // * i fixed it by adding a tally state so it doesn't run on first render
   useEffect(() => {
-    if (switchTimers) {
+    if (tally > 0) {
       clearInterval(Ref.current);
       beginTimer(getDeadTime());
+
     }
   }, [switchTimers]);
 
@@ -82,16 +87,22 @@ export const App = () => {
           (seconds > 9 ? seconds : "0" + seconds)
       );
     }
-    if (minutes < 1 && seconds === 0) {
+    if (minutes < 1 && seconds === 0 && !switchTimers) {
       play();
       setSwitchTimers(!switchTimers);
       setTimer(breakState + ":00");
+      setTally(1);
+    } else if (minutes < 1 && seconds === 0 && switchTimers) {
+       play();
+       setSwitchTimers(!switchTimers);
+       setTimer(sessionState + ":00");
+       setTally(1);
     }
-    if (minutes < 1) {
-      setWarning(true);
-    } else {
-      setWarning(false);
-    }
+      if (minutes < 1) {
+        setWarning(true);
+      } else {
+        setWarning(false);
+      }
   };
 
   const resetTimer = () => {
