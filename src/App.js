@@ -89,12 +89,12 @@ export const App = () => {
     }
     if (minutes < 1 && seconds === 0 && !switchTimers) {
       play();
-      setSwitchTimers(!switchTimers);
+      setSwitchTimers( current => !current);
       setTimer(breakState + ":00");
       setTally(1);
     } else if (minutes < 1 && seconds === 0 && switchTimers) {
        play();
-       setSwitchTimers(!switchTimers);
+       setSwitchTimers( current => !current);
        setTimer(sessionState + ":00");
        setTally(1);
     }
